@@ -36,7 +36,7 @@ namespace MakePlacePlugin.Gui
 
         protected void DrawAllUi()
         {
-            if (!ImGui.Begin($"{Plugin.Name}", ref WindowVisible, ImGuiWindowFlags.NoScrollWithMouse))
+            if (!ImGui.Begin($"{Plugin.Name}", ImGuiWindowFlags.NoScrollWithMouse))
             {
                 return;
             }
