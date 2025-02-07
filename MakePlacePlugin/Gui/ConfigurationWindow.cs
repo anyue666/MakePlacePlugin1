@@ -10,6 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using static MakePlacePlugin.MakePlacePlugin;
+private bool WindowVisible;
+
 
 namespace MakePlacePlugin.Gui
 {
