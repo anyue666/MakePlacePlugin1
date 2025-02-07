@@ -34,64 +34,65 @@ namespace MakePlacePlugin.Gui
             };
         }
 
-        protected void DrawAllUi()
+protected void DrawAllUi()
+{
+    // 即使 ImGui.Begin 返回 false 也继续执行后续代码
+    ImGui.Begin($"{Plugin.Name}", ImGuiWindowFlags.NoScrollWithMouse); 
+
+    // 这里开始绘制 GUI 内容，无论 ImGui.Begin 的返回值是什么都会执行
+    if (ImGui.BeginChild("##SettingsRegion"))
+    {
+        DrawGeneralSettings();
+    }
+
+    if (ImGui.BeginChild("##ItemListRegion"))
+    {
+        ImGui.PushStyleColor(ImGuiCol.Header, PURPLE_ALPHA);
+        ImGui.PushStyleColor(ImGuiCol.HeaderHovered, PURPLE);
+        ImGui.PushStyleColor(ImGuiCol.HeaderActive, PURPLE);
+
+        if (ImGui.CollapsingHeader("Interior Furniture", ImGuiTreeNodeFlags.DefaultOpen))
         {
-            if (!ImGui.Begin($"{Plugin.Name}", ImGuiWindowFlags.NoScrollWithMouse))
-            {
-                return;
-            }
-            if (ImGui.BeginChild("##SettingsRegion"))
-            {
-                DrawGeneralSettings();
-                if (ImGui.BeginChild("##ItemListRegion"))
-                {
-                    ImGui.PushStyleColor(ImGuiCol.Header, PURPLE_ALPHA);
-                    ImGui.PushStyleColor(ImGuiCol.HeaderHovered, PURPLE);
-                    ImGui.PushStyleColor(ImGuiCol.HeaderActive, PURPLE);
-
-
-                    if (ImGui.CollapsingHeader("Interior Furniture", ImGuiTreeNodeFlags.DefaultOpen))
-                    {
-                        ImGui.PushID("interior");
-                        DrawItemList(Plugin.InteriorItemList);
-                        ImGui.PopID();
-                    }
-                    if (ImGui.CollapsingHeader("Exterior Furniture", ImGuiTreeNodeFlags.DefaultOpen))
-                    {
-                        ImGui.PushID("exterior");
-                        DrawItemList(Plugin.ExteriorItemList);
-                        ImGui.PopID();
-                    }
-
-                    if (ImGui.CollapsingHeader("Interior Fixtures", ImGuiTreeNodeFlags.DefaultOpen))
-                    {
-                        ImGui.PushID("interiorFixture");
-                        DrawFixtureList(Plugin.Layout.interiorFixture);
-                        ImGui.PopID();
-                    }
-
-                    if (ImGui.CollapsingHeader("Exterior Fixtures", ImGuiTreeNodeFlags.DefaultOpen))
-                    {
-                        ImGui.PushID("exteriorFixture");
-                        DrawFixtureList(Plugin.Layout.exteriorFixture);
-                        ImGui.PopID();
-                    }
-                    if (ImGui.CollapsingHeader("Unused Furniture", ImGuiTreeNodeFlags.DefaultOpen))
-                    {
-                        ImGui.PushID("unused");
-                        DrawItemList(Plugin.UnusedItemList, true);
-                        ImGui.PopID();
-                    }
-
-                    ImGui.PopStyleColor(3);
-                    ImGui.EndChild();
-                }
-                ImGui.EndChild();
-            }
-
-            this.FileDialogManager.Draw();
+            ImGui.PushID("interior");
+            DrawItemList(Plugin.InteriorItemList);
+            ImGui.PopID();
+        }
+        if (ImGui.CollapsingHeader("Exterior Furniture", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            ImGui.PushID("exterior");
+            DrawItemList(Plugin.ExteriorItemList);
+            ImGui.PopID();
         }
 
+        if (ImGui.CollapsingHeader("Interior Fixtures", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            ImGui.PushID("interiorFixture");
+            DrawFixtureList(Plugin.Layout.interiorFixture);
+            ImGui.PopID();
+        }
+
+        if (ImGui.CollapsingHeader("Exterior Fixtures", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            ImGui.PushID("exteriorFixture");
+            DrawFixtureList(Plugin.Layout.exteriorFixture);
+            ImGui.PopID();
+        }
+
+        if (ImGui.CollapsingHeader("Unused Furniture", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            ImGui.PushID("unused");
+            DrawItemList(Plugin.UnusedItemList, true);
+            ImGui.PopID();
+        }
+
+        ImGui.PopStyleColor(3);
+        ImGui.EndChild();
+    }
+
+    this.FileDialogManager.Draw();
+
+    ImGui.End();
+}
         protected override void DrawUi()
         {
             ImGui.PushStyleColor(ImGuiCol.TitleBgActive, PURPLE);
