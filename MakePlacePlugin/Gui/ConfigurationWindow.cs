@@ -36,75 +36,60 @@ namespace MakePlacePlugin.Gui
 
         protected void DrawAllUi()
         {
-            if (!ImGui.Begin($"{Plugin.Name}", ref WindowVisible))
+            if (!ImGui.Begin($"{Plugin.Name}", ref WindowVisible, ImGuiWindowFlags.NoScrollWithMouse))
             {
-                MakePlacePlugin.LogInfo("ImGui.Begin() failed. Window will not display.");
                 return;
             }
-
-            try
+            if (ImGui.BeginChild("##SettingsRegion"))
             {
-                if (ImGui.BeginChild("##SettingsRegion"))
+                DrawGeneralSettings();
+                if (ImGui.BeginChild("##ItemListRegion"))
                 {
-                    MakePlacePlugin.LogInfo("ImGui.BeginChild() for SettingsRegion successful.");
-                    DrawGeneralSettings();
-                    if (ImGui.BeginChild("##ItemListRegion"))
+                    ImGui.PushStyleColor(ImGuiCol.Header, PURPLE_ALPHA);
+                    ImGui.PushStyleColor(ImGuiCol.HeaderHovered, PURPLE);
+                    ImGui.PushStyleColor(ImGuiCol.HeaderActive, PURPLE);
+
+
+                    if (ImGui.CollapsingHeader("Interior Furniture", ImGuiTreeNodeFlags.DefaultOpen))
                     {
-                        MakePlacePlugin.LogInfo("ImGui.BeginChild() for ItemListRegion successful.");
-                        ImGui.PushStyleColor(ImGuiCol.Header, PURPLE_ALPHA);
-                        ImGui.PushStyleColor(ImGuiCol.HeaderHovered, PURPLE);
-                        ImGui.PushStyleColor(ImGuiCol.HeaderActive, PURPLE);
-
-                        if (ImGui.CollapsingHeader("Interior Furniture", ImGuiTreeNodeFlags.DefaultOpen))
-                        {
-                            ImGui.PushID("interior");
-                            DrawItemList(Plugin.InteriorItemList);
-                            ImGui.PopID();
-                        }
-                        if (ImGui.CollapsingHeader("Exterior Furniture", ImGuiTreeNodeFlags.DefaultOpen))
-                        {
-                            ImGui.PushID("exterior");
-                            DrawItemList(Plugin.ExteriorItemList);
-                            ImGui.PopID();
-                        }
-
-                        if (ImGui.CollapsingHeader("Interior Fixtures", ImGuiTreeNodeFlags.DefaultOpen))
-                        {
-                            ImGui.PushID("interiorFixture");
-                            DrawFixtureList(Plugin.Layout.interiorFixture);
-                            ImGui.PopID();
-                        }
-
-                        if (ImGui.CollapsingHeader("Exterior Fixtures", ImGuiTreeNodeFlags.DefaultOpen))
-                        {
-                            ImGui.PushID("exteriorFixture");
-                            DrawFixtureList(Plugin.Layout.exteriorFixture);
-                            ImGui.PopID();
-                        }
-                        if (ImGui.CollapsingHeader("Unused Furniture", ImGuiTreeNodeFlags.DefaultOpen))
-                        {
-                            ImGui.PushID("unused");
-                            DrawItemList(Plugin.UnusedItemList, true);
-                            ImGui.PopID();
-                        }
-
-                        ImGui.PopStyleColor(3);
-                        ImGui.EndChild();
+                        ImGui.PushID("interior");
+                        DrawItemList(Plugin.InteriorItemList);
+                        ImGui.PopID();
                     }
+                    if (ImGui.CollapsingHeader("Exterior Furniture", ImGuiTreeNodeFlags.DefaultOpen))
+                    {
+                        ImGui.PushID("exterior");
+                        DrawItemList(Plugin.ExteriorItemList);
+                        ImGui.PopID();
+                    }
+
+                    if (ImGui.CollapsingHeader("Interior Fixtures", ImGuiTreeNodeFlags.DefaultOpen))
+                    {
+                        ImGui.PushID("interiorFixture");
+                        DrawFixtureList(Plugin.Layout.interiorFixture);
+                        ImGui.PopID();
+                    }
+
+                    if (ImGui.CollapsingHeader("Exterior Fixtures", ImGuiTreeNodeFlags.DefaultOpen))
+                    {
+                        ImGui.PushID("exteriorFixture");
+                        DrawFixtureList(Plugin.Layout.exteriorFixture);
+                        ImGui.PopID();
+                    }
+                    if (ImGui.CollapsingHeader("Unused Furniture", ImGuiTreeNodeFlags.DefaultOpen))
+                    {
+                        ImGui.PushID("unused");
+                        DrawItemList(Plugin.UnusedItemList, true);
+                        ImGui.PopID();
+                    }
+
+                    ImGui.PopStyleColor(3);
                     ImGui.EndChild();
                 }
+                ImGui.EndChild();
+            }
 
-                this.FileDialogManager.Draw();
-            }
-            catch (Exception e)
-            {
-                MakePlacePlugin.LogInfo($"Error in DrawAllUi: {e.Message}");
-                throw;
-            }
-            finally
-            {
-                ImGui.End();
-            }
+            this.FileDialogManager.Draw();
         }
 
         protected override void DrawUi()
@@ -112,22 +97,13 @@ namespace MakePlacePlugin.Gui
             ImGui.PushStyleColor(ImGuiCol.TitleBgActive, PURPLE);
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, PURPLE_ALPHA);
             ImGui.PushStyleColor(ImGuiCol.ButtonActive, PURPLE_ALPHA);
+            ImGui.SetNextWindowSize(new Vector2(530, 450), ImGuiCond.FirstUseEver);
 
             DrawAllUi();
 
             ImGui.PopStyleColor(3);
+            ImGui.End();
         }
-
-        #region Helper Functions
-        public void DrawIcon(ushort icon, Vector2 size)
-        {
-            if (icon < 65000)
-            {
-                var iconTexture = DalamudApi.TextureProvider.GetFromGameIcon(new GameIconLookup(icon));
-                ImGui.Image(iconTexture.GetWrapOrEmpty().ImGuiHandle, size);
-            }
-        }
-        #endregion
 
         #region Basic UI
 
@@ -498,25 +474,4 @@ namespace MakePlacePlugin.Gui
                 });
                 Config.Save();
             }
-            ImGui.SameLine();
-            if (ImGui.Button("Clear"))
-            {
-                itemList.Clear();
-                Config.Save();
-            }
-
-            if (!isUnused)
-            {
-                ImGui.SameLine();
-                ImGui.Text("Note: Missing items, incorrect dyes, and items on unselected floors are grayed out");
-            }
-
-            // name, position, r, color, set
-            int columns = isUnused ? 4 : 5;
-
-
-            ImGui.Columns(columns, "ItemList", true);
-            ImGui.Separator();
-            ImGui.Text("Item"); ImGui.NextColumn();
-            ImGui.Text("Position (X,Y,Z)"); ImGui.NextColumn();
-            ImGui.Text("Rotation");
+            ImGui
