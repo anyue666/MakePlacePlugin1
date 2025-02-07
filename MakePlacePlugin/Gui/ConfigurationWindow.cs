@@ -625,11 +625,3 @@ private unsafe void DrawItemOnScreen()
         }
     }
 }
-
-
-
-
-
-
-    }
-}
