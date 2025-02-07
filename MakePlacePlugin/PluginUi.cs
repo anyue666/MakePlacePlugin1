@@ -22,11 +22,13 @@ namespace MakePlacePlugin
         {
             ConfigWindow.Draw();
         }
+
         private void OnOpenConfigUi()
         {
-            ConfigWindow.Visible = true;
-            ConfigWindow.CanUpload = false;
-            ConfigWindow.CanImport = false;
+            // 移除设置窗口不可见的逻辑
+            // ConfigWindow.Visible = true;
+            // ConfigWindow.CanUpload = false;
+            // ConfigWindow.CanImport = false;
         }
 
         public void Dispose()
