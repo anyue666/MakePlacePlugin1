@@ -10,7 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using static MakePlacePlugin.MakePlacePlugin;
-private bool WindowVisible;
 
 
 namespace MakePlacePlugin.Gui
@@ -19,6 +18,7 @@ namespace MakePlacePlugin.Gui
     {
 
         public Configuration Config => Plugin.Config;
+		private bool WindowVisible = true; // 将WindowVisible移到类内部
 
         private string CustomTag = string.Empty;
         private readonly Dictionary<uint, uint> iconToFurniture = new() { };
