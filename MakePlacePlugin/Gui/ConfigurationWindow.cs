@@ -105,6 +105,18 @@ namespace MakePlacePlugin.Gui
             ImGui.End();
         }
 
+        #region Helper Functions
+        public void DrawIcon(ushort icon, Vector2 size)
+        {
+            if (icon < 65000)
+            {
+                var iconTexture = DalamudApi.TextureProvider.GetFromGameIcon(new GameIconLookup(icon));
+                ImGui.Image(iconTexture.GetWrapOrEmpty().ImGuiHandle, size);
+            }
+        }
+        #endregion
+
+
         #region Basic UI
 
         private void LogLayoutMode()
@@ -403,6 +415,8 @@ namespace MakePlacePlugin.Gui
 
                 ImGui.NextColumn();
             }
+
+
         }
 
         private void DrawFixtureList(List<Fixture> fixtureList)
@@ -446,9 +460,9 @@ namespace MakePlacePlugin.Gui
             }
             catch (Exception e)
             {
-                MakePlacePlugin.LogInfo($"Error in DrawFixtureList: {e.Message}");
-                throw;
+                LogError(e.Message, e.StackTrace);
             }
+
         }
 
         private void DrawItemList(List<HousingItem> itemList, bool isUnused = false)
@@ -474,4 +488,148 @@ namespace MakePlacePlugin.Gui
                 });
                 Config.Save();
             }
-            ImGui
+            ImGui.SameLine();
+            if (ImGui.Button("Clear"))
+            {
+                itemList.Clear();
+                Config.Save();
+            }
+
+            if (!isUnused)
+            {
+                ImGui.SameLine();
+                ImGui.Text("Note: Missing items, incorrect dyes, and items on unselected floors are grayed out");
+            }
+
+            // name, position, r, color, set
+            int columns = isUnused ? 4 : 5;
+
+
+            ImGui.Columns(columns, "ItemList", true);
+            ImGui.Separator();
+            ImGui.Text("Item"); ImGui.NextColumn();
+            ImGui.Text("Position (X,Y,Z)"); ImGui.NextColumn();
+            ImGui.Text("Rotation"); ImGui.NextColumn();
+            ImGui.Text("Dye/Material"); ImGui.NextColumn();
+
+            if (!isUnused)
+            {
+                ImGui.Text("Set Position"); ImGui.NextColumn();
+            }
+
+            ImGui.Separator();
+            for (int i = 0; i < itemList.Count(); i++)
+            {
+                var housingItem = itemList[i];
+                var displayName = housingItem.Name;
+
+                var item = DalamudApi.DataManager.GetExcelSheet<Item>().GetRow(housingItem.ItemKey);
+                if (item != null)
+                {
+                    DrawIcon(item.Icon, new Vector2(20, 20));
+                    ImGui.SameLine();
+                }
+
+                if (housingItem.ItemStruct == IntPtr.Zero)
+                {
+                    ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.5f, 0.5f, 0.5f, 1));
+                }
+
+                ImGui.Text(displayName);
+
+
+
+                ImGui.NextColumn();
+                DrawRow(i, housingItem, !isUnused);
+
+                if (housingItem.ItemStruct == IntPtr.Zero)
+                {
+                    ImGui.PopStyleColor();
+                }
+
+                ImGui.Separator();
+            }
+
+            ImGui.Columns(1);
+
+        }
+
+        #endregion
+
+
+        #region Draw Screen
+protected override void DrawScreen()
+{
+    if (Config.DrawScreen)
+    {
+        DrawItemOnScreen();
+    }
+}
+
+private unsafe void DrawItemOnScreen()
+{
+    if (Memory.Instance == null) return;
+
+    var itemList = Memory.Instance.GetCurrentTerritory() == Memory.HousingArea.Indoors 
+        ? Plugin.InteriorItemList 
+        : Plugin.ExteriorItemList;
+
+    for (int i = 0; i < itemList.Count(); i++)
+    {
+        var playerPos = DalamudApi.ClientState.LocalPlayer.Position;
+        var housingItem = itemList[i];
+
+        if (housingItem.ItemStruct == IntPtr.Zero) continue;
+
+        var itemStruct = (HousingItemStruct*)housingItem.ItemStruct;
+        var itemPos = new Vector3(itemStruct->Position.X, itemStruct->Position.Y, itemStruct->Position.Z);
+
+        if (Config.DrawDistance > 0 && (playerPos - itemPos).Length() > Config.DrawDistance)
+            continue;
+
+        var displayName = housingItem.Name;
+        if (DalamudApi.GameGui.WorldToScreen(itemPos, out var screenCoords))
+        {
+            ImGui.PushID("HousingItemWindow" + i);
+            ImGui.SetNextWindowPos(new Vector2(screenCoords.X, screenCoords.Y));
+            ImGui.SetNextWindowBgAlpha(0.8f);
+            if (ImGui.Begin("HousingItem" + i,
+                ImGuiWindowFlags.NoDecoration |
+                ImGuiWindowFlags.AlwaysAutoResize |
+                ImGuiWindowFlags.NoSavedSettings | 
+                ImGuiWindowFlags.NoMove |
+                ImGuiWindowFlags.NoFocusOnAppearing | 
+                ImGuiWindowFlags.NoNav))
+            {
+                ImGui.Text(displayName);
+
+                ImGui.SameLine();
+
+                if (ImGui.Button("Set" + "##ScreenItem" + i.ToString()))
+                {
+                    if (!Memory.Instance.CanEditItem())
+                    {
+                        LogError("Unable to set position while not in rotate layout mode");
+                        continue;
+                    }
+
+                    SetItemPosition(housingItem);
+                    Config.Save();
+                }
+
+                ImGui.SameLine();
+                ImGui.End();
+            }
+
+            ImGui.PopID();
+        }
+    }
+}
+
+
+
+
+
+
+    }
+}
