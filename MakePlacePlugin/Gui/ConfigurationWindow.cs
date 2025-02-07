@@ -38,8 +38,10 @@ namespace MakePlacePlugin.Gui
         {
             if (!ImGui.Begin($"{Plugin.Name}", ref WindowVisible, ImGuiWindowFlags.NoScrollWithMouse))
             {
+                WindowVisible = true;
                 return;
             }
+        
             if (ImGui.BeginChild("##SettingsRegion"))
             {
                 DrawGeneralSettings();
@@ -48,47 +50,49 @@ namespace MakePlacePlugin.Gui
                     ImGui.PushStyleColor(ImGuiCol.Header, PURPLE_ALPHA);
                     ImGui.PushStyleColor(ImGuiCol.HeaderHovered, PURPLE);
                     ImGui.PushStyleColor(ImGuiCol.HeaderActive, PURPLE);
-
-
+        
                     if (ImGui.CollapsingHeader("Interior Furniture", ImGuiTreeNodeFlags.DefaultOpen))
                     {
                         ImGui.PushID("interior");
                         DrawItemList(Plugin.InteriorItemList);
                         ImGui.PopID();
                     }
+        
                     if (ImGui.CollapsingHeader("Exterior Furniture", ImGuiTreeNodeFlags.DefaultOpen))
                     {
                         ImGui.PushID("exterior");
                         DrawItemList(Plugin.ExteriorItemList);
                         ImGui.PopID();
                     }
-
+        
                     if (ImGui.CollapsingHeader("Interior Fixtures", ImGuiTreeNodeFlags.DefaultOpen))
                     {
                         ImGui.PushID("interiorFixture");
                         DrawFixtureList(Plugin.Layout.interiorFixture);
                         ImGui.PopID();
                     }
-
+        
                     if (ImGui.CollapsingHeader("Exterior Fixtures", ImGuiTreeNodeFlags.DefaultOpen))
                     {
                         ImGui.PushID("exteriorFixture");
                         DrawFixtureList(Plugin.Layout.exteriorFixture);
                         ImGui.PopID();
                     }
+        
                     if (ImGui.CollapsingHeader("Unused Furniture", ImGuiTreeNodeFlags.DefaultOpen))
                     {
                         ImGui.PushID("unused");
                         DrawItemList(Plugin.UnusedItemList, true);
                         ImGui.PopID();
                     }
-
+        
                     ImGui.PopStyleColor(3);
                     ImGui.EndChild();
                 }
+        
                 ImGui.EndChild();
             }
-
+        
             this.FileDialogManager.Draw();
         }
 
@@ -558,70 +562,78 @@ namespace MakePlacePlugin.Gui
 
 
         #region Draw Screen
-protected override void DrawScreen()
-{
-    if (Config.DrawScreen)
-    {
-        DrawItemOnScreen();
-    }
-}
-
-private unsafe void DrawItemOnScreen()
-{
-    if (Memory.Instance == null) return;
-
-    var itemList = Memory.Instance.GetCurrentTerritory() == Memory.HousingArea.Indoors 
-        ? Plugin.InteriorItemList 
-        : Plugin.ExteriorItemList;
-
-    for (int i = 0; i < itemList.Count(); i++)
-    {
-        var playerPos = DalamudApi.ClientState.LocalPlayer.Position;
-        var housingItem = itemList[i];
-
-        if (housingItem.ItemStruct == IntPtr.Zero) continue;
-
-        var itemStruct = (HousingItemStruct*)housingItem.ItemStruct;
-        var itemPos = new Vector3(itemStruct->Position.X, itemStruct->Position.Y, itemStruct->Position.Z);
-
-        if (Config.DrawDistance > 0 && (playerPos - itemPos).Length() > Config.DrawDistance)
-            continue;
-
-        var displayName = housingItem.Name;
-        if (DalamudApi.GameGui.WorldToScreen(itemPos, out var screenCoords))
+        protected override void DrawScreen()
         {
-            ImGui.PushID("HousingItemWindow" + i);
-            ImGui.SetNextWindowPos(new Vector2(screenCoords.X, screenCoords.Y));
-            ImGui.SetNextWindowBgAlpha(0.8f);
-            if (ImGui.Begin("HousingItem" + i,
-                ImGuiWindowFlags.NoDecoration |
-                ImGuiWindowFlags.AlwaysAutoResize |
-                ImGuiWindowFlags.NoSavedSettings | 
-                ImGuiWindowFlags.NoMove |
-                ImGuiWindowFlags.NoFocusOnAppearing | 
-                ImGuiWindowFlags.NoNav))
+            if (Config.DrawScreen)
             {
-                ImGui.Text(displayName);
+                DrawItemOnScreen();
+            }
+        }
 
-                ImGui.SameLine();
+        private unsafe void DrawItemOnScreen()
+        {
 
-                if (ImGui.Button("Set" + "##ScreenItem" + i.ToString()))
+            if (Memory.Instance == null) return;
+
+            var itemList = Memory.Instance.GetCurrentTerritory() == Memory.HousingArea.Indoors ? Plugin.InteriorItemList : Plugin.ExteriorItemList;
+
+            for (int i = 0; i < itemList.Count(); i++)
+            {
+                var playerPos = DalamudApi.ClientState.LocalPlayer.Position;
+                var housingItem = itemList[i];
+
+                if (housingItem.ItemStruct == IntPtr.Zero) continue;
+
+                var itemStruct = (HousingItemStruct*)housingItem.ItemStruct;
+
+                var itemPos = new Vector3(itemStruct->Position.X, itemStruct->Position.Y, itemStruct->Position.Z);
+                if (Config.HiddenScreenItemHistory.IndexOf(i) >= 0) continue;
+                if (Config.DrawDistance > 0 && (playerPos - itemPos).Length() > Config.DrawDistance)
+                    continue;
+                var displayName = housingItem.Name;
+                if (DalamudApi.GameGui.WorldToScreen(itemPos, out var screenCoords))
                 {
-                    if (!Memory.Instance.CanEditItem())
+                    ImGui.PushID("HousingItemWindow" + i);
+                    ImGui.SetNextWindowPos(new Vector2(screenCoords.X, screenCoords.Y));
+                    ImGui.SetNextWindowBgAlpha(0.8f);
+                    if (ImGui.Begin("HousingItem" + i,
+                        ImGuiWindowFlags.NoDecoration |
+                        ImGuiWindowFlags.AlwaysAutoResize |
+                        ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoMove |
+                        ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav))
                     {
-                        LogError("Unable to set position while not in rotate layout mode");
-                        continue;
+
+                        ImGui.Text(displayName);
+
+                        ImGui.SameLine();
+
+                        if (ImGui.Button("Set" + "##ScreenItem" + i.ToString()))
+                        {
+                            if (!Memory.Instance.CanEditItem())
+                            {
+                                LogError("Unable to set position while not in rotate layout mode");
+                                continue;
+                            }
+
+                            SetItemPosition(housingItem);
+                            Config.HiddenScreenItemHistory.Add(i);
+                            Config.Save();
+                        }
+
+                        ImGui.SameLine();
+
+                        ImGui.End();
                     }
 
-                    SetItemPosition(housingItem);
-                    Config.Save();
+                    ImGui.PopID();
                 }
-
-                ImGui.SameLine();
-                ImGui.End();
             }
-
-            ImGui.PopID();
         }
+        #endregion
+
+
+
+
+
     }
 }
