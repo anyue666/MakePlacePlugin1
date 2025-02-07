@@ -755,7 +755,7 @@ namespace MakePlacePlugin
             {
                 if (string.IsNullOrEmpty(args) || args.Equals("config", StringComparison.OrdinalIgnoreCase))
                 {
-                    Gui.ConfigWindow.Visible = !Gui.ConfigWindow.Visible;
+
                 }
             }
             catch (Exception e)
