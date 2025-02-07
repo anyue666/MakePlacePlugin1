@@ -44,11 +44,11 @@ namespace MakePlacePlugin.Gui
                 return;
             }
         
-            if (ImGui.BeginChild("##SettingsRegion"))
-            {
+            
+            
                 DrawGeneralSettings();
-                if (ImGui.BeginChild("##ItemListRegion"))
-                {
+                
+                
                     ImGui.PushStyleColor(ImGuiCol.Header, PURPLE_ALPHA);
                     ImGui.PushStyleColor(ImGuiCol.HeaderHovered, PURPLE);
                     ImGui.PushStyleColor(ImGuiCol.HeaderActive, PURPLE);
@@ -90,10 +90,10 @@ namespace MakePlacePlugin.Gui
         
                     ImGui.PopStyleColor(3);
                     ImGui.EndChild();
-                }
+                
         
                 ImGui.EndChild();
-            }
+            
         
             this.FileDialogManager.Draw();
         }
